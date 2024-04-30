@@ -15,7 +15,17 @@
 ## tput setaf 8 = light blue
 ##################################################################################################################
 
+ctrl_c() {
+	tput setaf 3
+	echo "Saliendo ..."
+	tput sgr 0
+	sleep 2
+	exit
+}
+trap ctrl_c INT
+
 get_target() {
+	echo ""
 	tput setaf 6
 	read -p "Indica la direccion target: " host
 	sleep 2
@@ -26,18 +36,26 @@ get_target() {
 	tput sgr 0
 }
 
+loop() {
+	2>/dev/null exec 3<>/dev/tcp/$host/$port
+}
+
+resolve() {
+	if [[ $? -eq 0 ]]; then
+		echo ""
+		tput setaf 2
+		echo -e "\n\t[+] El puerto $port de la direccion $host esta abierto\n"
+		tput sgr 0
+	else
+		echo ""
+		echo ""
+		tput setaf 3
+		echo -e "\n\t[!] El puerto $port de la direccion $host esta cerrado\n"
+		tput sgr 0
+	fi
+	exec 3>&-
+}
+
 get_target
-2>/dev/null exec 3<>/dev/tcp/$host/$port
-
-if [[ $? -eq 0 ]]; then
-	tput setaf 3
-	echo -e "\n\t[+] El puerto $port de la direccion $host esta abierto\n"
-	tput sgr 0
-else
-	echo ""
-	echo ""
-	tput setaf 1
-	echo -e "\n\t[!] El puerto $port de la direccion $host esta cerrado\n"
-fi
-
-exec 3>&-
+loop
+resolve
